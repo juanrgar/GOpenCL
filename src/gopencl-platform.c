@@ -18,7 +18,7 @@ G_DEFINE_TYPE (GopenclPlatform, gopencl_platform, G_TYPE_OBJECT);
 #define GOPENCL_PLATFORM_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GOPENCL_TYPE_PLATFORM, GopenclPlatformPrivate))
 struct _GopenclPlatformPrivate
 {
-    cl_platform_id *cl_platform;
+    cl_platform_id cl_platform;
 };
 
 
@@ -26,7 +26,12 @@ enum
 {
     PROP_0,
 
-    PROP_PLATFORM_ID
+    PROP_PLATFORM_ID,
+    PROP_PLATFORM_PROFILE,
+    PROP_PLATFORM_VERSION,
+    PROP_PLATFORM_NAME,
+    PROP_PLATFORM_VENDOR,
+    PROP_PLATFORM_EXTENSIONS
 };
 
 static void
@@ -41,7 +46,7 @@ gopencl_platform_set_property (GObject *object,
     switch (property_id)
     {
     case PROP_PLATFORM_ID:
-        g_free (priv->cl_platform);
+//         g_free (priv->cl_platform);
         priv->cl_platform = g_value_get_pointer (value);
         g_print ("platform id set %p\n", priv->cl_platform);
         break;
@@ -58,11 +63,41 @@ gopencl_platform_get_property (GObject *object,
                                GValue *value,
                                GParamSpec *pspec)
 {
-//     GopenclPlatform *self = GOPENCL_PLATFORM (object);
-//     GopenclPlatformPrivate *priv = GOPENCL_PLATFORM_GET_PRIVATE (self);
+    GopenclPlatform *self = GOPENCL_PLATFORM (object);
+    GopenclPlatformPrivate *priv = GOPENCL_PLATFORM_GET_PRIVATE (self);
+    size_t str_buf_len;
+    gchar *str_buf;
 
     switch (property_id)
     {
+    case PROP_PLATFORM_PROFILE:
+        clGetPlatformInfo (priv->cl_platform,
+                           CL_PLATFORM_PROFILE,
+                           0,
+                           NULL,
+                           &str_buf_len);
+        str_buf = (gchar *) g_malloc (sizeof (gchar) * str_buf_len);
+        clGetPlatformInfo (priv->cl_platform,
+                           CL_PLATFORM_PROFILE,
+                           str_buf_len,
+                           str_buf,
+                           NULL);
+        g_value_set_static_string (value, str_buf);
+        break;
+    case PROP_PLATFORM_NAME:
+        clGetPlatformInfo (priv->cl_platform,
+                           CL_PLATFORM_NAME,
+                           0,
+                           NULL,
+                           &str_buf_len);
+        str_buf = (gchar *) g_malloc (sizeof (gchar) * str_buf_len);
+        clGetPlatformInfo (priv->cl_platform,
+                           CL_PLATFORM_NAME,
+                           str_buf_len,
+                           str_buf,
+                           NULL);
+        g_value_set_static_string (value, str_buf);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -83,9 +118,8 @@ gopencl_platform_finalize (GObject *object)
     GopenclPlatformPrivate *priv = GOPENCL_PLATFORM_GET_PRIVATE (self);
 
     if (priv->cl_platform != NULL) {
-        g_free (priv->cl_platform);
         priv->cl_platform = NULL;
-        g_print ("cl_platform freed\n");
+        g_print ("cl_platform nulled\n");
     }
 
     G_OBJECT_CLASS (gopencl_platform_parent_class)->finalize (object);
@@ -108,6 +142,24 @@ gopencl_platform_class_init (GopenclPlatformClass *klass)
                                      PROP_PLATFORM_ID,
                                      pspec);
 
+    pspec = g_param_spec_string ("profile",
+                                 "Platform profile",
+                                 "OpenCL profile string",
+                                 "no-profile",
+                                 G_PARAM_READABLE);
+    g_object_class_install_property (gobject_class,
+                                     PROP_PLATFORM_PROFILE,
+                                     pspec);
+
+    pspec = g_param_spec_string ("name",
+                                 "Platform name",
+                                 "Platform name string",
+                                 "no-name",
+                                 G_PARAM_READABLE);
+    g_object_class_install_property (gobject_class,
+                                     PROP_PLATFORM_NAME,
+                                     pspec);
+
     gobject_class->dispose = gopencl_platform_dispose;
     gobject_class->finalize = gopencl_platform_finalize;
 
@@ -125,14 +177,14 @@ gopencl_platform_init (GopenclPlatform *self)
 }
 
 static GopenclPlatform *
-gopencl_platform_new (cl_platform_id *cl_platform)
+gopencl_platform_new (cl_platform_id cl_platform)
 {
     return g_object_new (GOPENCL_TYPE_PLATFORM,
                          "id", cl_platform,
                          NULL);
 }
 
-gint
+gboolean
 gopencl_platform_get_platform_ids (gint num_entries,
                                    GList **platforms,
                                    GError **err)
@@ -140,21 +192,32 @@ gopencl_platform_get_platform_ids (gint num_entries,
     guint i;
     cl_platform_id cl_platforms[num_entries];
     cl_uint cl_num_platforms;
+    cl_int cl_err = 0;
 
-    if (platforms == NULL) {
-        return GOPENCL_ERROR;
+    if (platforms == NULL || num_entries == 0) {
+        g_set_error (err,
+                     GOPENCL_ERROR,
+                     GOPENCL_INVALID_VALUE,
+                     "Invalid value");
+        return FALSE;
     }
 
-    clGetPlatformIDs ((cl_int) num_entries, cl_platforms, &cl_num_platforms);
+    cl_err = clGetPlatformIDs ((cl_int) num_entries, cl_platforms, &cl_num_platforms);
+    if (cl_err != CL_SUCCESS) {
+        g_set_error (err,
+                     GOPENCL_ERROR,
+                     GOPENCL_INVALID_VALUE,
+                     "Invalid value");
+        return FALSE;
+    }
+
 
     g_print ("num platforms returned %d\n", cl_num_platforms);
 
     for (i = 0; i < cl_num_platforms; i++) {
-        cl_platform_id *cl_plat = g_memdup ((const cl_platform_id *) &cl_platforms[i],
-                                            sizeof (cl_platform_id));
-        GopenclPlatform *g_plat = gopencl_platform_new (cl_plat);
+        GopenclPlatform *g_plat = gopencl_platform_new (cl_platforms[i]);
         *platforms = g_list_prepend (*platforms, g_plat);
     }
 
-    return GOPENCL_SUCCESS;
+    return TRUE;
 }
