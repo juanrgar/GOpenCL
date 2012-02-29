@@ -31,24 +31,34 @@ main (gint argc, gchar **argv)
     g_error_free (err);
     err = NULL;
 
-    g_print("--------------\n");
+//     void *cl_plat;
+//     g_object_get (plat, "id", &cl_plat, NULL);
+
+    g_print("--------------\n\n\n");
 
     ret = gopencl_platform_get_platform_ids (5, &platforms, NULL);
     g_print ("%d platforms found\n", g_list_length (platforms));
     plat = GOPENCL_PLATFORM ((g_list_first (platforms))->data);
 
-    g_object_get (plat, "name", &str_buf, NULL);
-    g_print ("platform name %s\n", str_buf);
-    g_free (str_buf);
-    str_buf = NULL;
-
-//     void *cl_plat;
-//     g_object_get (plat, "id", &cl_plat, NULL);
-
     g_object_get (plat, "profile", &str_buf, NULL);
-    g_print ("platform profile %s\n", str_buf);
+    g_print ("\tPlatform profile %s\n", str_buf);
     g_free (str_buf);
-    str_buf = NULL;
+
+    g_object_get (plat, "version", &str_buf, NULL);
+    g_print ("\tPlatform version %s\n", str_buf);
+    g_free (str_buf);
+
+    g_object_get (plat, "name", &str_buf, NULL);
+    g_print ("\tPlatform name %s\n", str_buf);
+    g_free (str_buf);
+
+    g_object_get (plat, "vendor", &str_buf, NULL);
+    g_print ("\tPlatform vendor %s\n", str_buf);
+    g_free (str_buf);
+
+    g_object_get (plat, "extensions", &str_buf, NULL);
+    g_print ("\tPlatform extensions %s\n", str_buf);
+    g_free (str_buf);
 
     g_list_free_full (platforms, g_object_unref);
 
