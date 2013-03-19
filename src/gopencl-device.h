@@ -1,6 +1,6 @@
-/*
- * Copyright/Licensing information.
- */
+// Copyright (c) 2013, Juan R. García Blanco <juanrgar@gmail.com>
+// All rights reserved.
+// See LICENCE for more information.
 
 #ifndef __GOPENCL_DEVICE_H__
 #define __GOPENCL_DEVICE_H__

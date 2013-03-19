@@ -9,6 +9,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
 AC_PROG_CXX
 LT_INIT
+PKG_PROG_PKG_CONFIG
 
 # Checks for libraries.
 AC_MSG_WARN([Only Apple's implementation has been tested.])
@@ -24,6 +25,14 @@ case "$host_os" in
     LIBS="$LIBS -lOpenCL"
     ;;
 esac
+
+PKG_CHECK_MODULES([GLIB], [glib-2.0])
+AC_SUBST([GLIB_CFLAGS])
+AC_SUBST([GLIB_LIBS])
+
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0])
+AC_SUBST([GOBJECT_CFLAGS])
+AC_SUBST([GOBJECT_LIBS])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

@@ -1,13 +1,8 @@
-/*
- * Copyright/Licensing information.
- */
+// Copyright (c) 2013, Juan R. García Blanco <juanrgar@gmail.com>
+// All rights reserved.
+// See LICENCE for more information.
 
-#ifdef __APPLE__
-    #include <OpenCL/opencl.h>
-#else
-    #include <CL/opencl.h>
-#endif
-
+#include "xopencl.h"
 #include "gopencl.h"
 
 

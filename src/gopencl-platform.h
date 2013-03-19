@@ -1,6 +1,5 @@
-/*
- * Copyright/Licensing information.
- */
+// Copyright (c) 2013, Juan R. García Blanco <juanrgar@gmail.com>
+// All rights reserved.
 
 #ifndef __GOPENCL_PLATFORM_H__
 #define __GOPENCL_PLATFORM_H__

@@ -1,13 +1,8 @@
-/*
- * Copyright/Licensing information.
- */
+// Copyright (c) 2013, Juan R. García Blanco <juanrgar@gmail.com>
+// All rights reserved.
+// See LICENCE for more information.
 
-#ifdef __APPLE__
-    #include <OpenCL/opencl.h>
-#else
-    #include <CL/opencl.h>
-#endif
-
+#include "xopencl.h"
 #include "gopencl.h"
 
 
@@ -47,7 +42,6 @@ gopencl_platform_set_property (GObject *object,
         priv->cl_platform = g_value_get_pointer (value);
         g_message ("platform id set %p\n", priv->cl_platform);
         break;
-
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -84,9 +78,13 @@ gopencl_platform_get_property (GObject *object,
                                GParamSpec *pspec)
 {
     GopenclPlatform *self = GOPENCL_PLATFORM (object);
+    GopenclPlatformPrivate *priv = GOPENCL_PLATFORM_GET_PRIVATE (self);
 
     switch (property_id)
     {
+    case PROP_PLATFORM_ID:
+        g_value_set_pointer (value, priv->cl_platform);
+        break;
     case PROP_PLATFORM_PROFILE:
         gopencl_platform_query_prop (self, CL_PLATFORM_PROFILE, value);
         break;
@@ -141,7 +139,7 @@ gopencl_platform_class_init (GopenclPlatformClass *klass)
     pspec = g_param_spec_pointer ("id",
                                   "Platform ID",
                                   "Set platform's ID",
-                                  G_PARAM_CONSTRUCT_ONLY | G_PARAM_WRITABLE);
+                                  G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class,
                                      PROP_PLATFORM_ID,
                                      pspec);

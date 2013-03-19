@@ -5,5 +5,5 @@ LDADD = $(GLIB_LIBS) $(GOBJECT_LIBS)
 bin_PROGRAMS = platform-test
 
 platform_test_SOURCES = platform_test.c
-platform_test_LDADD = ../src/libGOpenCL.la $(GLIB_LIBS) $(GOBJECT_LIBS)
+platform_test_LDADD = ../src/libGOpenCL.la $(LDADD)
 
