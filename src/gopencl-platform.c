@@ -214,16 +214,14 @@ gopencl_platform_new (cl_platform_id cl_platform)
 }
 
 gboolean
-gopencl_platform_get_platform_ids (gint num_entries,
-                                   GList **platforms,
+gopencl_platform_get_platform_ids (GList **platforms,
                                    GError **err)
 {
-    guint i;
-    cl_platform_id cl_platforms[num_entries];
-    cl_uint cl_num_platforms;
+    guint i = 0;
+    cl_uint cl_num_platforms = 0;
     cl_int cl_err = 0;
 
-    if (platforms == NULL || num_entries == 0) {
+    if (platforms == NULL) {
         g_set_error (err,
                      GOPENCL_ERROR,
                      GOPENCL_INVALID_VALUE,
@@ -231,7 +229,7 @@ gopencl_platform_get_platform_ids (gint num_entries,
         return FALSE;
     }
 
-    cl_err = clGetPlatformIDs ((cl_int) num_entries, cl_platforms, &cl_num_platforms);
+    cl_err = clGetPlatformIDs (0, NULL, &cl_num_platforms);
     if (cl_err != CL_SUCCESS) {
         g_set_error (err,
                      GOPENCL_ERROR,
@@ -240,13 +238,24 @@ gopencl_platform_get_platform_ids (gint num_entries,
         return FALSE;
     }
 
-
     g_message ("num platforms returned %d\n", cl_num_platforms);
 
+    cl_platform_id cl_platforms[cl_num_platforms];
+    cl_err = clGetPlatformIDs (cl_num_platforms, cl_platforms, NULL);
+    if (cl_err != CL_SUCCESS) {
+        g_set_error (err,
+                     GOPENCL_ERROR,
+                     GOPENCL_INVALID_VALUE,
+                     "Invalid value");
+        return FALSE;
+    }
+
     for (i = 0; i < cl_num_platforms; i++) {
+        g_message ("appended platform\n");
         GopenclPlatform *g_plat = gopencl_platform_new (cl_platforms[i]);
         *platforms = g_list_prepend (*platforms, g_plat);
     }
 
     return TRUE;
 }
+

@@ -1,5 +1,6 @@
 // Copyright (c) 2013, Juan R. García Blanco <juanrgar@gmail.com>
 // All rights reserved.
+// See LICENCE for more information.
 
 #ifndef __GOPENCL_PLATFORM_H__
 #define __GOPENCL_PLATFORM_H__
@@ -31,9 +32,9 @@ struct _GopenclPlatformClass
 
 GType gopencl_platform_get_type (void);
 
-gint
-gopencl_platform_get_platform_ids (gint num_entries,
-                                   GList **platforms,
+gboolean
+gopencl_platform_get_platform_ids (GList **platforms,
                                    GError **err);
 
 #endif
+
