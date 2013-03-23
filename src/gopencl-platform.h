@@ -32,9 +32,15 @@ struct _GopenclPlatformClass
 
 GType gopencl_platform_get_type (void);
 
+gint
+gopencl_platform_get_platforms (GList **platforms,
+                                GError **err);
+
 gboolean
-gopencl_platform_get_platform_ids (GList **platforms,
-                                   GError **err);
+gopencl_platform_is_full_profile (GopenclPlatform *self);
+
+gboolean
+gopencl_platform_is_embedded_profile (GopenclPlatform *self);
 
 #endif
 
