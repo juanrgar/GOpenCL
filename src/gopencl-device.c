@@ -20,7 +20,9 @@ enum
     PROP_0,
 
     PROP_DEVICE_ID,
-    PROP_DEVICE_EXTENSIONS
+    PROP_DEVICE_EXTENSIONS,
+    PROP_DEVICE_NAME,
+    PROP_DEVICE_VENDOR
 };
 
 static void
@@ -85,6 +87,12 @@ gopencl_device_get_property (GObject *object,
     case PROP_DEVICE_EXTENSIONS:
         gopencl_device_query_prop_str(self, CL_DEVICE_EXTENSIONS, value);
         break;
+    case PROP_DEVICE_NAME:
+        gopencl_device_query_prop_str(self, CL_DEVICE_NAME, value);
+        break;
+    case PROP_DEVICE_VENDOR:
+        gopencl_device_query_prop_str(self, CL_DEVICE_VENDOR, value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -125,6 +133,15 @@ gopencl_device_class_init (GopenclDeviceClass *klass)
                                  G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
     g_object_class_install_property(gobject_class,
                                     PROP_DEVICE_ID,
+                                    pspec);
+
+    pspec = g_param_spec_string("name",
+                                "Device name",
+                                "Device name string",
+                                "no-name",
+                                G_PARAM_READABLE);
+    g_object_class_install_property(gobject_class,
+                                    PROP_DEVICE_NAME,
                                     pspec);
 
 //     pspec = g_param_spec_string("profile",
@@ -226,13 +243,14 @@ gopencl_device_get_all_devices (gopencl_device_type device_type,
     GError *err = NULL;
     gint platforms_found = 0;
     gint i, j;
+    GList *devices_platform = NULL;
     gint devices_platform_i = 0;
     gint devices_found = 0;
     GopenclDevice *device = NULL;
 
     platforms_found = gopencl_platform_get_platforms(&platforms, &err);
     if (err) {
-        g_set_error(err,
+        g_set_error(error,
                     GOPENCL_ERROR,
                     GOPENCL_INVALID_VALUE,
                     "Invalid value");
@@ -243,10 +261,10 @@ gopencl_device_get_all_devices (gopencl_device_type device_type,
         GopenclPlatform *plat = GOPENCL_PLATFORM(g_list_nth_data(platforms, i));
         devices_platform_i = gopencl_device_get_devices(plat, 
                                                         device_type,
-                                                        &devices,
+                                                        &devices_platform,
                                                         &err);
         if (err) {
-            g_set_error(err,
+            g_set_error(error,
                         GOPENCL_ERROR,
                         GOPENCL_INVALID_VALUE,
                         "Invalid value");
@@ -256,7 +274,7 @@ gopencl_device_get_all_devices (gopencl_device_type device_type,
         devices_found += devices_platform_i;
 
         for (j = 0; j < devices_platform_i; j++) {
-            device = GOPENCL_DEVICE(g_list_nth_data(devices, j));
+            device = GOPENCL_DEVICE(g_list_nth_data(devices_platform, j));
             *devices = g_list_prepend(*devices, device);
         }
     }
