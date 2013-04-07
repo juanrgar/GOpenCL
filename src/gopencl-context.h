@@ -37,9 +37,9 @@ GType gopencl_context_get_type (void);
 typedef enum _gopencl_context_type gopencl_context_type;
 
 GopenclContext *
-gopencl_context_new (const GList *devices,
-                     GClosure    *error_callback,
-                     GError      **error);
+gopencl_context_new (GList                 *devices,
+                     gpointer              *user_data,
+                     GError                **error);
 
 #endif
 
