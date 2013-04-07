@@ -7,6 +7,7 @@
 
 #include <glib-object.h>
 
+#include "user-marshallers.h"
 #include "xopencl.h"
 
 #define GOPENCL_TYPE_CONTEXT               (gopencl_context_get_type())
@@ -38,8 +39,13 @@ typedef enum _gopencl_context_type gopencl_context_type;
 
 GopenclContext *
 gopencl_context_new (GList                 *devices,
-                     gpointer              *user_data,
                      GError                **error);
+
+void 
+gopencl_context_unref (GopenclContext *self);
+
+gpointer
+gopencl_context_ref (GopenclContext *self);
 
 #endif
 

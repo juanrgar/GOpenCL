@@ -12,14 +12,13 @@ G_DEFINE_TYPE (GopenclContext, gopencl_context, G_TYPE_OBJECT);
 struct _GopenclContextPrivate
 {
     cl_context cl_context;
-    GClosure   *error_callback;
 };
 
 enum
 {
     PROP_0,
     PROP_CONTEXT_ID,
-    PROP_ERROR_CALLBACK
+    PROP_ERROR_CALLBACK_DATA
 };
 
 enum
@@ -44,10 +43,6 @@ gopencl_context_set_property (GObject *object,
     case PROP_CONTEXT_ID:
         priv->cl_context = g_value_get_pointer(value);
         g_message("context id set %p\n", priv->cl_context);
-        break;
-    case PROP_ERROR_CALLBACK:
-        priv->error_callback = g_value_get_pointer(value);
-        g_message("error callback set %p\n", priv->error_callback);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -92,9 +87,6 @@ gopencl_context_get_property (GObject *object,
     case PROP_CONTEXT_ID:
         g_value_set_pointer(value, priv->cl_context);
         break;
-    case PROP_ERROR_CALLBACK:
-        g_value_set_pointer(value, priv->error_callback);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -106,12 +98,6 @@ gopencl_context_dispose (GObject *object)
 {
     GopenclContext *self = GOPENCL_CONTEXT(object);
     GopenclContextPrivate *priv = GOPENCL_CONTEXT_GET_PRIVATE(self);
-
-    if (priv->error_callback) {
-        g_closure_unref(priv->error_callback);
-        priv->error_callback = NULL;
-        g_message("error_callback unrefd and nulled\n");
-    }
 
     G_OBJECT_CLASS(gopencl_context_parent_class)->dispose(object);
 }
@@ -140,6 +126,7 @@ gopencl_context_class_init (GopenclContextClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
     GParamSpec *pspec;
+    GType signal_types[3];
 
     gobject_class->set_property = gopencl_context_set_property;
     gobject_class->get_property = gopencl_context_get_property;
@@ -147,20 +134,32 @@ gopencl_context_class_init (GopenclContextClass *klass)
     pspec = g_param_spec_pointer("id",
                                  "Context ID",
                                  "Set context ID",
-                                 G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
+                                 G_PARAM_READWRITE);
     g_object_class_install_property(gobject_class,
                                     PROP_CONTEXT_ID,
                                     pspec);
 
-    pspec = g_param_spec_pointer("error-callback",
-                                 "Error callback function",
-                                 "Set error callback function",
+    pspec = g_param_spec_pointer("error-callback-data",
+                                 "Error callback user_data parameter",
+                                 "Set error callback user data",
                                  G_PARAM_READWRITE);
     g_object_class_install_property(gobject_class,
-                                    PROP_ERROR_CALLBACK,
+                                    PROP_ERROR_CALLBACK_DATA,
                                     pspec);
 
-//    signals[ERROR_OCURRED] = g_signal_newv();
+    signal_types[0] = G_TYPE_STRING;
+    signal_types[1] = G_TYPE_POINTER;
+    signal_types[2] = G_TYPE_UINT;
+    signals[ERROR_OCURRED] = g_signal_newv("error-ocurred",
+                                           G_TYPE_FROM_CLASS(gobject_class),
+                                           G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
+                                           NULL,
+                                           NULL,
+                                           NULL,
+                                           g_cclosure_user_marshal_VOID__STRING_POINTER_UINT,
+                                           G_TYPE_NONE,
+                                           3,
+                                           signal_types);
 
     gobject_class->dispose = gopencl_context_dispose;
     gobject_class->finalize = gopencl_context_finalize;
@@ -176,7 +175,6 @@ gopencl_context_init (GopenclContext *self)
     self->priv = priv = GOPENCL_CONTEXT_GET_PRIVATE(self);
 
     priv->cl_context = NULL;
-    priv->error_callback = NULL;
 }
 
 static void
@@ -185,26 +183,37 @@ pfn_notify (const char *errinfo,
             size_t cb,
             void *user_data)
 {
-    GClosure *closure = (GClosure *) user_data;
-    GValue cb_params[3];
+    GValue instance_and_params[4] = { 0 };
+    GopenclContext *self = GOPENCL_CONTEXT(user_data);
+    GopenclContextPrivate *priv = GOPENCL_CONTEXT_GET_PRIVATE(self);
 
-    g_closure_invoke(closure, NULL, 3, cb_params, NULL);
+    g_value_init(&instance_and_params[0], GOPENCL_TYPE_CONTEXT);
+    g_value_set_object(&instance_and_params[0], self);
+
+    g_value_init(&instance_and_params[1], G_TYPE_STRING);
+    g_value_set_string(&instance_and_params[1], errinfo);
+
+    g_value_init(&instance_and_params[2], G_TYPE_POINTER);
+    g_value_set_pointer(&instance_and_params[2], (void *) private_info);
+
+    g_value_init(&instance_and_params[3], G_TYPE_UINT);
+    g_value_set_uint(&instance_and_params[3], cb);
+
+    g_signal_emitv(instance_and_params, signals[ERROR_OCURRED], 0, NULL);
 }
 
 GopenclContext *
 gopencl_context_new (GList *devices,
-                     gpointer *user_data,
                      GError **error)
 {
+    GopenclContext *self = NULL;
     cl_context context = NULL;
     cl_uint num_devices = 0;
     cl_int err = CL_SUCCESS;
     cl_device_id device_id = NULL;
-    GClosure *cb_closure = NULL;
     gint i = 0;
 
-    if ((devices == NULL) ||
-        ((error_callback == NULL) && (user_data != NULL))) {
+    if ((devices == NULL)) { 
         g_set_error(error,
                     GOPENCL_ERROR,
                     GOPENCL_INVALID_VALUE,
@@ -232,8 +241,11 @@ gopencl_context_new (GList *devices,
         cl_devices[i] = device_id;
     }
 
-    context = clCreateContext(0, num_devices, cl_devices, pfn_notify, cb_closure, &err);
+    self = g_object_new(GOPENCL_TYPE_CONTEXT, NULL);
+
+    context = clCreateContext(0, num_devices, cl_devices, pfn_notify, self, &err);
     if (err != CL_SUCCESS) {
+        gopencl_context_unref(self);
         g_set_error(error,
                     GOPENCL_ERROR,
                     GOPENCL_INVALID_VALUE,
@@ -241,10 +253,9 @@ gopencl_context_new (GList *devices,
         return NULL;
     }
 
-    return g_object_new(GOPENCL_TYPE_CONTEXT,
-                        "id", context,
-                        "error-callback", cb_closure,
-                        NULL);
+    g_object_set(self, "id", context, NULL);
+
+    return self;
 }
 
 gpointer
@@ -252,6 +263,10 @@ gopencl_context_ref (GopenclContext *self)
 {
     GopenclContextPrivate *priv = GOPENCL_CONTEXT_GET_PRIVATE(self);
     cl_int err = CL_SUCCESS;
+
+    // TODO Remove this line
+    // For testing purposes
+    pfn_notify(NULL, NULL, 0, self);
 
     err = clRetainContext(priv->cl_context);
     if (err != CL_SUCCESS) {
