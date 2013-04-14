@@ -2,6 +2,14 @@
 // All rights reserved.
 // See LICENCE for more information.
 
+/**
+ * SECTION:gopencl-context
+ * @short_description: Class that represents an OpenCL context.
+ * @stability: Unstable
+ *
+ * A #GopenclContext serves as a definition of computing environment.
+ **/
+
 #include "xopencl.h"
 #include "gopencl.h"
 
@@ -135,6 +143,13 @@ gopencl_context_class_init (GopenclContextClass *klass)
                                  "Context ID",
                                  "Set context ID",
                                  G_PARAM_READWRITE);
+    /**
+     * GopenclContext:id:
+     *
+     * Associated cl_context_id in the OpenCL environment.
+     *
+     * Since: 0.1
+     */
     g_object_class_install_property(gobject_class,
                                     PROP_CONTEXT_ID,
                                     pspec);
@@ -150,6 +165,18 @@ gopencl_context_class_init (GopenclContextClass *klass)
     signal_types[0] = G_TYPE_STRING;
     signal_types[1] = G_TYPE_POINTER;
     signal_types[2] = G_TYPE_UINT;
+
+    /**
+     * GopenclContext::error-ocurred:
+     * @object: the object...
+     * @err_info:
+     * @priv_info:
+     * @cb:
+     *
+     * The ::error-ocurred signal is emitted each time an error within the OpenCL context occurs.
+     *
+     * Since: 0.1
+     */
     signals[ERROR_OCURRED] = g_signal_newv("error-ocurred",
                                            G_TYPE_FROM_CLASS(gobject_class),
                                            G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
@@ -258,6 +285,16 @@ gopencl_context_new (GList *devices,
     return self;
 }
 
+/**
+ * gopencl_context_ref:
+ * @self: an instance of GopenclContext.
+ *
+ * Increments the reference count of a GopenclContext.
+ *
+ * Returns: the instance itself.
+ *
+ * Since: 0.1
+ */
 gpointer
 gopencl_context_ref (GopenclContext *self)
 {
