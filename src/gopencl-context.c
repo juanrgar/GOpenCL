@@ -20,13 +20,14 @@ G_DEFINE_TYPE (GopenclContext, gopencl_context, G_TYPE_OBJECT);
 struct _GopenclContextPrivate
 {
     cl_context cl_context;
+    GList *devices;
 };
 
 enum
 {
     PROP_0,
     PROP_CONTEXT_ID,
-    PROP_ERROR_CALLBACK_DATA
+    PROP_DEVICES
 };
 
 enum
@@ -51,6 +52,10 @@ gopencl_context_set_property (GObject *object,
     case PROP_CONTEXT_ID:
         priv->cl_context = g_value_get_pointer(value);
         g_message("context id set %p\n", priv->cl_context);
+        break;
+    case PROP_DEVICES:
+        priv->devices = g_value_get_pointer(value);
+        g_message("devices list stored %p\n", priv->devices);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -95,6 +100,9 @@ gopencl_context_get_property (GObject *object,
     case PROP_CONTEXT_ID:
         g_value_set_pointer(value, priv->cl_context);
         break;
+    case PROP_DEVICES:
+        g_value_set_pointer(value, priv->devices);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -126,6 +134,10 @@ gopencl_context_finalize (GObject *object)
         g_message("cl_context released and nulled\n");
     }
 
+    if (priv->devices) {
+        priv->devices = NULL;
+    }
+
     G_OBJECT_CLASS(gopencl_context_parent_class)->finalize(object);
 }
 
@@ -143,6 +155,7 @@ gopencl_context_class_init (GopenclContextClass *klass)
                                  "Context ID",
                                  "Set context ID",
                                  G_PARAM_READWRITE);
+
     /**
      * GopenclContext:id:
      *
@@ -154,12 +167,19 @@ gopencl_context_class_init (GopenclContextClass *klass)
                                     PROP_CONTEXT_ID,
                                     pspec);
 
-    pspec = g_param_spec_pointer("error-callback-data",
-                                 "Error callback user_data parameter",
-                                 "Set error callback user data",
+    pspec = g_param_spec_pointer("devices",
+                                 "Context associated devices",
+                                 "Set context devices",
                                  G_PARAM_READWRITE);
+    /**
+     * GopenclContext:devices:
+     *
+     * List of devices that build up the context.
+     *
+     * Since: 0.1
+     */
     g_object_class_install_property(gobject_class,
-                                    PROP_ERROR_CALLBACK_DATA,
+                                    PROP_DEVICES,
                                     pspec);
 
     signal_types[0] = G_TYPE_STRING;
@@ -281,6 +301,7 @@ gopencl_context_new (GList *devices,
     }
 
     g_object_set(self, "id", context, NULL);
+    g_object_set(self, "devices", devices, NULL);
 
     return self;
 }

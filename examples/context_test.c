@@ -27,6 +27,7 @@ main (gint argc, gchar **argv)
 {
     GopenclContext *context = NULL;
     GList *devices = NULL;
+    GList *devices_get = NULL;
     GError *err = NULL;
     gchar *str_buf = NULL;
     gboolean ret = FALSE;
@@ -42,7 +43,10 @@ main (gint argc, gchar **argv)
         g_print("context null\n");
     }
     g_signal_connect(context, "error-ocurred", G_CALLBACK(cb_func), user_data);
-    gopencl_context_ref(context);
+
+    g_object_get(context, "devices", &devices_get, NULL);
+    g_print("devices_get %p\n", devices_get);
+    g_print("devices %p\n", devices);
 
     return 0;
 }
