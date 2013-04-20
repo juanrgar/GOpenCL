@@ -5,12 +5,20 @@
 #include "gopencl.h"
 
 void
-cb_func (const gchararray errinfo,
+cb_func (GopenclContext *obj,
+         const gchararray errinfo,
          gconstpointer private_info,
          gsize cb,
          gpointer user_data)
 {
+    gchar *user_data_str = (gchar *) user_data;
+
+    g_print("errinfo %s\n", errinfo);
+    g_print("private_info %p\n", private_info);
+    g_print("cb %ld\n", cb);
     g_print("user_data %p\n", user_data);
+    g_print("user_data (string) %s\n", user_data_str);
+
     g_print("error callback function called\n");
 }
 
@@ -22,7 +30,7 @@ main (gint argc, gchar **argv)
     GError *err = NULL;
     gchar *str_buf = NULL;
     gboolean ret = FALSE;
-    char *user_data = (char *) malloc(5 * sizeof(char));
+    char *user_data = g_strdup("this is user data");
 
     g_type_init();
 

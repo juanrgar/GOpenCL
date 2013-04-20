@@ -301,10 +301,6 @@ gopencl_context_ref (GopenclContext *self)
     GopenclContextPrivate *priv = GOPENCL_CONTEXT_GET_PRIVATE(self);
     cl_int err = CL_SUCCESS;
 
-    // TODO Remove this line
-    // For testing purposes
-    pfn_notify(NULL, NULL, 0, self);
-
     err = clRetainContext(priv->cl_context);
     if (err != CL_SUCCESS) {
         // TODO
