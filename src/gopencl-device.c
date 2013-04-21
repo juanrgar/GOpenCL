@@ -4,6 +4,7 @@
 
 #include "xopencl.h"
 #include "gopencl.h"
+#include "gopencl-common.h"
 
 
 G_DEFINE_TYPE (GopenclDevice, gopencl_device, G_TYPE_OBJECT);
@@ -187,43 +188,40 @@ gopencl_device_get_devices (GopenclPlatform     *platform,
     cl_uint cl_num_devices;
     cl_int cl_err = 0;
 
-    if (platform == NULL) {
+    if ((platform == NULL) || (!GOPENCL_IS_PLATFORM(platform))) {
         g_set_error(err,
                     GOPENCL_ERROR,
                     GOPENCL_INVALID_PLATFORM,
                     "Invalid platform");
-        return FALSE;
+        return GOPENCL_INVALID_PLATFORM;
     }
 
     if (devices == NULL) {
         g_set_error(err,
                     GOPENCL_ERROR,
                     GOPENCL_INVALID_VALUE,
-                    "Invalid value");
-        return FALSE;
+                    "Invalid value for devices");
+        return GOPENCL_INVALID_VALUE;
     }
 
     cl_platform_id cl_platform;
     g_object_get(platform, "id", &cl_platform, NULL);
     cl_err = clGetDeviceIDs(cl_platform, device_type, 0, NULL, &cl_num_devices);
-    if (cl_err != CL_SUCCESS) {
-        g_set_error(err,
-                    GOPENCL_ERROR,
-                    GOPENCL_INVALID_VALUE,
-                    "Invalid value");
-        return FALSE;
-    }
 
     g_message("num devices returned %d\n", cl_num_devices);
+
+    if (cl_num_devices == 0) {
+        g_set_error(err,
+                    GOPENCL_ERROR,
+                    GOPENCL_DEVICE_NOT_FOUND,
+                    "Device not found");
+        return GOPENCL_DEVICE_NOT_FOUND;
+    }
 
     cl_device_id cl_devices[cl_num_devices];
     cl_err = clGetDeviceIDs(cl_platform, device_type, cl_num_devices, cl_devices, NULL);
     if (cl_err != CL_SUCCESS) {
-        g_set_error(err,
-                    GOPENCL_ERROR,
-                    GOPENCL_INVALID_VALUE,
-                    "Invalid value");
-        return FALSE;
+        return gopencl_format_error(cl_err, err);
     }
 
     for (i = 0; i < cl_num_devices; i++) {
@@ -250,11 +248,8 @@ gopencl_device_get_all_devices (gopencl_device_type device_type,
 
     platforms_found = gopencl_platform_get_platforms(&platforms, &err);
     if (err) {
-        g_set_error(error,
-                    GOPENCL_ERROR,
-                    GOPENCL_INVALID_VALUE,
-                    "Invalid value");
-        return 0;
+        *error = err;
+        return platforms_found;
     }
 
     for (i = 0; i < platforms_found; i++) {
@@ -264,11 +259,8 @@ gopencl_device_get_all_devices (gopencl_device_type device_type,
                                                         &devices_platform,
                                                         &err);
         if (err) {
-            g_set_error(error,
-                        GOPENCL_ERROR,
-                        GOPENCL_INVALID_VALUE,
-                        "Invalid value");
-            return devices_found;
+            *error = err;
+            return devices_platform_i;
         }
 
         devices_found += devices_platform_i;

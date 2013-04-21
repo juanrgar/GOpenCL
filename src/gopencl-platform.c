@@ -4,6 +4,7 @@
 
 #include "xopencl.h"
 #include "gopencl.h"
+#include "gopencl-common.h"
 
 
 G_DEFINE_TYPE (GopenclPlatform, gopencl_platform, G_TYPE_OBJECT);
@@ -226,28 +227,25 @@ gopencl_platform_get_platforms (GList **platforms,
                      GOPENCL_ERROR,
                      GOPENCL_INVALID_VALUE,
                      "Invalid value");
-        return 0;
+        return GOPENCL_INVALID_VALUE;
     }
 
     cl_err = clGetPlatformIDs(0, NULL, &cl_num_platforms);
-    if (cl_err != CL_SUCCESS) {
+
+    g_message("num platforms returned %d\n", cl_num_platforms);
+
+    if (cl_num_platforms == 0) {
         g_set_error(err,
                      GOPENCL_ERROR,
                      GOPENCL_INVALID_VALUE,
                      "Invalid value");
-        return 0;
+        return GOPENCL_INVALID_VALUE;
     }
-
-    g_message("num platforms returned %d\n", cl_num_platforms);
 
     cl_platform_id cl_platforms[cl_num_platforms];
     cl_err = clGetPlatformIDs(cl_num_platforms, cl_platforms, NULL);
     if (cl_err != CL_SUCCESS) {
-        g_set_error(err,
-                     GOPENCL_ERROR,
-                     GOPENCL_INVALID_VALUE,
-                     "Invalid value");
-        return 0;
+        return gopencl_format_error(cl_err, err);
     }
 
     for (i = 0; i < cl_num_platforms; i++) {
