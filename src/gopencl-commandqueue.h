@@ -32,10 +32,18 @@ struct _GopenclCommandqueueClass
 
 GType gopencl_commandqueue_get_type (void);
 
+typedef enum _gopencl_commandqueue_properties gopencl_commandqueue_properties;
+
+enum _gopencl_commandqueue_properties {
+    GOPENCL_COMMANDQUEUE_OUT_OF_ORDER_ENABLE = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
+    GOPENCL_COMMANDQUEUE_PROFILING_ENABLE    = CL_QUEUE_PROFILING_ENABLE
+};
+
 GopenclCommandqueue *
-gopencl_commandqueue_new (GopenclContext *context,
-                          GopenclDevice  *device,
-                          GError         **error);
+gopencl_commandqueue_new (GopenclContext                  *context,
+                          GopenclDevice                   *device,
+                          gopencl_commandqueue_properties properties,
+                          GError                          **error);
 
 #endif
 

@@ -142,11 +142,28 @@ gopencl_commandqueue_init (GopenclCommandqueue *self)
 }
 
 GopenclCommandqueue *
-gopencl_commandqueue_new (GopenclContext *context,
-                          GopenclDevice  *device,
-                          GError         **error)
+gopencl_commandqueue_new (GopenclContext                  *context,
+                          GopenclDevice                   *device,
+                          gopencl_commandqueue_properties properties,
+                          GError                          **error)
 {
     cl_command_queue cl_commandqueue = NULL;
+    cl_device_id cl_device = 0;
+    cl_context cl_context = 0;
+    cl_int err = CL_SUCCESS;
+
+    g_object_get(device, "id", &cl_device, NULL);
+    g_object_get(context, "id", &cl_context, NULL);
+
+    cl_commandqueue = clCreateCommandQueue(cl_context,
+                                           cl_device,
+                                           properties,
+                                           &err);
+    if (err != CL_SUCCESS) {
+        return gopencl_format_error(err, error);
+    }
+
+    g_message("Created command queue %p for device %d\n", cl_commandqueue, cl_device);
 
     return g_object_new(GOPENCL_TYPE_COMMANDQUEUE,
                         "id", cl_commandqueue,
