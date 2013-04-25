@@ -2,6 +2,16 @@
 // All rights reserved.
 // See LICENCE for more information.
 
+/**
+ * SECTION:gopencl-commandqueue
+ * @short_description: Class that represents an OpenCL command queue.
+ * @stability: Unstable
+ *
+ * A #GopenclCommandqueue is associated with a device and it serves as a pool of
+ * work batches.
+ **/
+
+
 #include "xopencl.h"
 #include "gopencl.h"
 #include "gopencl-common.h"
@@ -160,13 +170,66 @@ gopencl_commandqueue_new (GopenclContext                  *context,
                                            properties,
                                            &err);
     if (err != CL_SUCCESS) {
-        return gopencl_format_error(err, error);
+        gopencl_format_error(err, error);
+        return NULL;
     }
 
-    g_message("Created command queue %p for device %d\n", cl_commandqueue, cl_device);
+    g_message("Created command queue %p for device %p\n", cl_commandqueue, cl_device);
 
     return g_object_new(GOPENCL_TYPE_COMMANDQUEUE,
                         "id", cl_commandqueue,
                         NULL);
+}
+
+/**
+ * gopencl_commandqueue_ref:
+ * @self: an instance of GopenclCommandqueue.
+ *
+ * Increments the object reference count.
+ *
+ * Returns: the instance itself.
+ *
+ * Since: 0.1
+ */
+gpointer
+gopencl_commandqueue_ref (GopenclCommandqueue *self)
+{
+    cl_command_queue cl_queue = NULL;
+    cl_int err = CL_SUCCESS;
+
+    g_object_get(self, "id", &cl_queue, NULL);
+
+    err = clRetainCommandQueue(cl_queue);
+    if (err != CL_SUCCESS) {
+        gopencl_format_error(err, NULL);
+        return NULL;
+    }
+
+    return g_object_ref(self);
+}
+
+/**
+ * gopencl_commandqueue_unref:
+ * @self: an instance of GopenclCommandqueue.
+ *
+ * Decrements the object reference count.
+ *
+ * Since: 0.1
+ */
+void
+gopencl_commandqueue_unref (GopenclCommandqueue *self)
+{
+    cl_command_queue cl_queue = NULL;
+    cl_int err = CL_SUCCESS;
+
+    g_object_get(self, "id", &cl_queue, NULL);
+
+    err = clReleaseCommandQueue(cl_queue);
+    if (err != CL_SUCCESS) {
+        gopencl_format_error(err, NULL);
+        return NULL;
+    }
+
+    return g_object_unref(self);
 }
 

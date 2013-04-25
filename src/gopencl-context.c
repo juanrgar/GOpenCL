@@ -310,7 +310,7 @@ gopencl_context_new (GList *devices,
  * gopencl_context_ref:
  * @self: an instance of GopenclContext.
  *
- * Increments the reference count of a GopenclContext.
+ * Increments the object reference count.
  *
  * Returns: the instance itself.
  *
@@ -329,6 +329,14 @@ gopencl_context_ref (GopenclContext *self)
     g_object_ref(self);
 }
 
+/**
+ * gopencl_commandqueue_unref:
+ * @self: an instance of GopenclCommandqueue.
+ *
+ * Decrements the object reference count.
+ *
+ * Since: 0.1
+ */
 void
 gopencl_context_unref (GopenclContext *self)
 {

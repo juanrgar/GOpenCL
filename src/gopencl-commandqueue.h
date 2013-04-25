@@ -45,5 +45,11 @@ gopencl_commandqueue_new (GopenclContext                  *context,
                           gopencl_commandqueue_properties properties,
                           GError                          **error);
 
+gpointer
+gopencl_commandqueue_ref (GopenclCommandqueue *self);
+
+void
+gopencl_commandqueue_unref (GopenclCommandqueue *self);
+
 #endif
 

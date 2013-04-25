@@ -10,6 +10,11 @@ gint
 gopencl_format_error (cl_int cl_err,
                       GError **err)
 {
+    enum gopencl_error error_code = GOPENCL_SUCCESS;
+    const gchar *error_descriptions[] = {
+            "Invalid platform",
+            "Invalid device type" };
+
     switch (cl_err) {
         case CL_INVALID_PLATFORM:
             g_set_error(err,
@@ -46,6 +51,12 @@ gopencl_format_error (cl_int cl_err,
                         GOPENCL_OUT_OF_HOST_MEMORY,
                         "Out of host memory");
             return GOPENCL_OUT_OF_HOST_MEMORY;
+        case CL_INVALID_DEVICE:
+            g_set_error(err,
+                        GOPENCL_ERROR,
+                        GOPENCL_INVALID_DEVICE,
+                        "Invalid device");
+            return GOPENCL_INVALID_DEVICE;
         default:
             return 0;
     }
